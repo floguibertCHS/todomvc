@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const mongoose =  require('mongoose');
-mongoose.connect('mongodb://localhost:27017/todomvcdb')
+mongoose.connect('mongodb://localhost:27017/todo-db')
 
 mongoose.Promise = require('bluebird');
 const bodyParser = require('body-parser');
@@ -18,8 +18,6 @@ app.get('/', function (req, res) {
 })
 
 // put routes here
-
-
 app.get('/api/todos', async(request,response)=>{
 var todo = await Todo.find();
         return response.json(todo);
@@ -32,31 +30,48 @@ var todo = await Todo.find();
 // var id = 0
 app.post('/api/todos', (request, response) => {
     // var todo = await Todo.create({ id:id++})
-    
+
     let title = request.body;
-    // console.log(title);
-    // let id = +1;
-    // title.push[id];
-    // console.log(title);
+  
     console.log(request.body);
-    // let todo = new Todo(request.body)
-    //     todo.save(function(err, newItem){
-    //         console.log(newItem);
-    //         response.json(newItem);
-    //     })
-    Todo.create(request.body, function(err, todoItem){
-        console.log(todoItem);
-    })
+    let todo = new Todo(request.body)
+        todo.save(function(err, newItem){
+            response.json(newItem);
+        })
 
 });
 
-app.get('/api/todos/:id', (request, response) => {
+// app.get('/api/todos/:id', (request, response) => {
+//     let id = request.params.id;
+//     let todo = todos.find(todo => todo.id === id)
+// });
+// app.put('/api/todos/:id', (request, response) => {
+// });
+// app.patch('/api/todos/:id', (request, response) => {
+// });
+app.get('/api/todos/:id', async(request, response) => {
     let id = request.params.id;
-    let todo = todos.find(todo => todo.id === id)
+    let todo = await Todo.find({ _id: id });
+
+    if (!todo) {
+        response.status(404);
+        return response.end();
+    }
+    return response.json(todo);
 });
-app.put('/api/todos/:id', (request, response) => {
-});
-app.patch('/api/todos/:id', (request, response) => {
+app.put('/api/todos/:id', async (request, response) => {
+    let id = request.params.id;
+    let title = request.body.title;
+    await Todo.findOneAndUpdate({ _id: id },
+        {
+            $set: {
+                title: title
+            }
+        }
+    );
+    let updated = await Todo.find({ _id: id })
+
+    return response.json(updated);
 });
 app.delete('/api/todos/:id', (request, response) => {
     Todo.findByIdAndRemove(request.params.id, function(error, deletedTodo){
